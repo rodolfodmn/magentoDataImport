@@ -1,4 +1,3 @@
-
 <?php
 
 ini_set('display_errors', 1);
@@ -126,8 +125,7 @@ switch ($_GET['opcao']) {
             try {
                 $data = unserialize($line);
                 $product = Mage::getModel('catalog/product')->loadByAttribute('sku', $data['sku']);
-                var_dump($product->getId());
-                if ($data['detail'] != null) {
+                if ($data['detail'] != null && $product) {
                     $reviewCollection = Mage::getModel('review/review')->getCollection()
                         ->addFieldToFilter('detail', array("like" => $data['detail']))
                         ->addFieldToFilter('title', array("like" => $data['title']));
@@ -136,6 +134,8 @@ switch ($_GET['opcao']) {
                         var_dump($value);
                         $value->setEntityId($value->getEntityIdByCode(Mage_Review_Model_Review::ENTITY_PRODUCT_CODE))
                             ->setEntityPkValue($product->getId());
+
+                        $value->save();
                         break;
                     }
                     $count_import += count($reviewCollection);

@@ -1,2 +1,2 @@
 # Magento data import
-scripts para importação de dados entra lojas magento
+scripts para importação de dados entre lojas magento

@@ -1,3 +1,4 @@
+<a href="./">voltar</a>
 <?php
 
 ini_set('display_errors', 1);
@@ -9,15 +10,9 @@ ini_set('xdebug.var_display_max_data', -1);
 
 include '../../app/Mage.php';
 Mage::app();
+validateOption($_GET['option']);
 
-echo $_GET['option'];
 exit;
-
-if (count($_GET) <= 0) {
-    echo "Parametro 'opcao' não encontrado </br>";
-    exit;
-}
-
 switch ($_GET['opcao']) {
     case '1':
         echo 'Iniciando Exportação de comentários (Opnioes Verificadas)</br>';
@@ -179,4 +174,73 @@ switch ($_GET['opcao']) {
     default:
         echo 'Opção não encontrada </br>';
         break;
+}
+
+function validateOption($option = null){
+
+    if (empty($option)) {
+        echo "<p>Não identifiquei a opção ¯\_(ツ)_/¯</p> </br>";
+        exit;
+    }
+    switch ($option) {
+        case '1':
+            see_origin_data();
+            break;
+        case '2':
+            break;
+        case '3':
+            break;
+        case '4':
+            break;
+        case '5':
+            break;
+        case '6':
+            break;
+        default:
+            break;
+    }
+}
+
+function see_origin_data()
+{
+    echo '<p>Esses são os dados que serão importados:</p></hr>';
+    $collection = mage::getModel('catalog/product')->getCollection();
+    $select = $collection->getSelect();
+    $select->reset(Zend_Db_Select::COLUMNS);
+    $select->columns('entity_id');
+    $select->columns('sku');
+    $productResource = Mage::getModel('catalog/product')->getResource();
+
+    $nulls = [];
+    $count = 0;
+    foreach ($collection as $key => $value) {
+        $reviewCollection = Mage::getModel('review/review')->getCollection()
+            ->addFieldToFilter('entity_pk_value', array("in" => array($key)));
+        
+        foreach ($reviewCollection as $review) {
+            $count++;
+            $data = $review->getData();
+            foreach ($data as $k => $v) {
+                if ($v == null) {
+                    if (!isset($nulls[$k])) {
+                        $nulls[$k] = 0;
+                    }
+                    $nulls[$k]++;
+                }
+            }
+            $data['detail'] = trim($data['detail']);
+            if ($data['customer_id']) {
+                $customer = Mage::getModel('customer/customer')->load($data['customer_id']);
+                if ($customer && $customer->getId()) {
+                    $data['customer_id'] = $customer->getEmail();
+                }
+            }
+            $data['sku'] = $value->getSku();
+            var_dump($data);
+        }
+    }
+    echo "<p>Serão importados $count comentários.</p>";
+    foreach ($nulls as $fields => $count) {
+        echo "<p>Existem $count $fields com null.</p>";
+    }
 }

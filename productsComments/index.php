@@ -14,7 +14,7 @@
     echo '<p>Informe:</p>';
     echo "<ul>";
     foreach ($options as $key => $value) {
-        echo "<li> $key - para: $value</li>";
+        echo "<li> ".($key+1)." - para: $value</li>";
     }
     echo "</ul>";
     ?>

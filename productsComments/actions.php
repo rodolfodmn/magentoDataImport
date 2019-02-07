@@ -7,8 +7,11 @@ ini_set('xdebug.var_display_max_depth', -1);
 ini_set('xdebug.var_display_max_children', -1);
 ini_set('xdebug.var_display_max_data', -1);
 
-include 'app/Mage.php';
+include '../../app/Mage.php';
 Mage::app();
+
+echo $_GET['option'];
+exit;
 
 if (count($_GET) <= 0) {
     echo "Parametro 'opcao' não encontrado </br>";

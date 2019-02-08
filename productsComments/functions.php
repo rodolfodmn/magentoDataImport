@@ -71,13 +71,13 @@ function genarate_json_by_array($arr = [], $name = 'file')
 function import_files($name = 'file', $is_json = false)
 {
     echo 'Iniciando Importação de comentários (Opnioes Verificadas)</br>';
-
+    echo Mage::getBaseDir() . "/$name.json";
     if ($is_json) {
-        $json = file_get_contents(Mage::getBaseDir('var') . "/$name.json");
+        $json = file_get_contents(Mage::getBaseDir() . "/$name.json");
         $json_data = json_decode($json, true);
 
         foreach ($json_data as $key => $data) {
-            var_dump($data);
+            
 
             if ($data['customer_id']) {
                 $customer = Mage::getModel('customer/customer')
@@ -90,13 +90,14 @@ function import_files($name = 'file', $is_json = false)
                 }
 
             }
+            $product = Mage::getModel('catalog/product')->loadByAttribute('sku', $data['sku']);
+           
             unset($data['detail_id']);
             unset($data['review_id']);
-            var_dump($data);
-            exit;
+            
             $review = Mage::getModel('review/review')->setData($data);
             $review->setEntityId($review->getEntityIdByCode(Mage_Review_Model_Review::ENTITY_PRODUCT_CODE))
-                ->setEntityPkValue($data['entity_pk_value'])
+                ->setEntityPkValue($product->getId())
                 ->setStatusId(Mage_Review_Model_Review::STATUS_PENDING)
                 ->setStoreId(Mage::app()->getStore()->getId())
                 ->setStores(array(Mage::app()->getStore()->getId()));

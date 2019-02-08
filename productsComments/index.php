@@ -4,10 +4,11 @@
     $options = [
         'see_origin_data',
         'see_final_data',
-        'export_csv',
+        'generate_export_csv',
         'emulate_import',
         'import_csv',
-        'validate_import'
+        'see_file_to_export',
+        'validate_file_to_export',
     ];
 
     echo "<p>O que você precisa hoje?<p><br />";

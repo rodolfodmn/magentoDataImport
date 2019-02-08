@@ -28,6 +28,9 @@ function validateOption($option = null)
         case '8':
             see_file_to_export(true);
             break;
+        case '9':
+            import_files('review_diff', true);
+            break;
         default:
             break;
     }
@@ -52,6 +55,115 @@ function genarate_csv_by_array($arr = [], $name = 'file', $serialize = true)
         fwrite($file, serialize($data) . "\n");
     }
     fclose($file);
+}
+
+function genarate_json_by_array($arr = [], $name = 'file')
+{
+    $file = fopen(Mage::getBaseDir('var') . "/$name.json", "w+");
+    try {
+        fwrite($file, json_encode($arr));
+    } catch (\Exception $th) {
+        echo $th->getMessage();
+    }
+    fclose($file);
+}
+
+function import_files($name = 'file', $is_json = false)
+{
+    echo 'Iniciando Importação de comentários (Opnioes Verificadas)</br>';
+
+    if ($is_json) {
+        $json = file_get_contents(Mage::getBaseDir('var') . "/$name.json");
+        $json_data = json_decode($json, true);
+
+        foreach ($json_data as $key => $data) {
+            var_dump($data);
+
+            if ($data['customer_id']) {
+                $customer = Mage::getModel('customer/customer')
+                    ->setWebsiteId(Mage::app()->getStore()->getWebsiteId())
+                    ->loadByEmail($data['customer_id']);
+                if ($customer && $customer->getId()) {
+                    $data['customer_id'] = $customer->getId();
+                } else {
+                    $data['customer_id'] = null;
+                }
+
+            }
+            unset($data['detail_id']);
+            unset($data['review_id']);
+            var_dump($data);
+            exit;
+            $review = Mage::getModel('review/review')->setData($data);
+            $review->setEntityId($review->getEntityIdByCode(Mage_Review_Model_Review::ENTITY_PRODUCT_CODE))
+                ->setEntityPkValue($data['entity_pk_value'])
+                ->setStatusId(Mage_Review_Model_Review::STATUS_PENDING)
+                ->setStoreId(Mage::app()->getStore()->getId())
+                ->setStores(array(Mage::app()->getStore()->getId()));
+            $review->save();
+            // var_dump($review->getProductCollection());
+            Mage::getModel('rating/rating')
+                ->setRatingId(1)
+                ->setReviewId($review->getId());
+
+            // ->addOptionVote($data['rate'], $prodId);
+
+            $review->save();
+            $review->aggregate();
+            echo '<br />num é que deu bom :)<br />';
+
+            var_dump($data);
+        }
+    } else {
+        $file = fopen(Mage::getBaseUrl() . '/review.csv', 'r');
+        while (($line = fgets($file)) !== false) {
+            try {
+                if ($data = unserialize($line)) {
+                    // Mage::log($data,null,'log.log',true);
+                    if ($data['customer_id']) {
+                        $customer = Mage::getModel('customer/customer')
+                            ->setWebsiteId(Mage::app()->getStore()->getWebsiteId())
+                            ->loadByEmail($data['customer_id']);
+                        if ($customer && $customer->getId()) {
+                            $data['customer_id'] = $customer->getId();
+                        } else {
+                            $data['customer_id'] = null;
+                        }
+
+                    }
+                    unset($data['detail_id']);
+                    unset($data['review_id']);
+                    // var_dump($data);
+                    // exit;
+                    $review = Mage::getModel('review/review')->setData($data);
+                    $review->setEntityId($review->getEntityIdByCode(Mage_Review_Model_Review::ENTITY_PRODUCT_CODE))
+                        ->setEntityPkValue($data['entity_pk_value'])
+                        ->setStatusId(Mage_Review_Model_Review::STATUS_PENDING)
+                        ->setStoreId(Mage::app()->getStore()->getId())
+                        ->setStores(array(Mage::app()->getStore()->getId()));
+                    $review->save();
+                    // var_dump($review->getProductCollection());
+                    Mage::getModel('rating/rating')
+                        ->setRatingId(1)
+                        ->setReviewId($review->getId());
+
+                    // ->addOptionVote($data['rate'], $prodId);
+
+                    $review->save();
+                    $review->aggregate();
+                    echo '<br />num é que deu bom :)<br />';
+                }
+                var_dump($data);
+                echo '<br />Faaaalllsee :(<br />';
+
+            } catch (Exception $th) {
+                var_dump($data);
+                echo '<br />nem deu bom<br />';
+                echo $th->getMessage();
+            }
+        }
+    }
+    echo 'Finalizada a Importação de comentários </br>';
 }
 
 function see_origin_data()
@@ -173,23 +285,33 @@ function csv_data_count()
 function see_file_to_export($diff_file = false)
 {
     echo '<p>Visualização dos dados no arquivo de importação</p>';
-    $name = ($diff_file) ? 'review_diff' : 'review';
 
-    $file = fopen(Mage::getBaseDir('var') . "/$name.csv", 'r');
+    $name = ($diff_file) ? 'review_diff.json' : 'review.csv';
+    $file = fopen(Mage::getBaseDir('var') . "/$name", 'r');
     $count_import = 0;
-    while (($line = fgets($file)) !== false) {
-        try {
-            if ($data = unserialize($line)) {
-                $count_import += 1;
+    if (!$diff_file) {
+        while (($line = fgets($file)) !== false) {
+            try {
+                if ($data = unserialize($line)) {
+                    $count_import += 1;
 
+                    var_dump($data);
+                }
+            } catch (Exception $th) {
                 var_dump($data);
+                echo '<br />nem deu bom<br />';
+                echo $th->getMessage();
             }
-        } catch (Exception $th) {
-            var_dump($data);
-            echo '<br />nem deu bom<br />';
-            echo $th->getMessage();
         }
+    } else {
+        $json = file_get_contents(Mage::getBaseDir('var') . "/$name");
+        $json_data = json_decode($json, true);
     }
+
+    if (!$count_import) {
+        var_dump(unserialize($file));
+    }
+
     echo "<p>Serão importados $count_import comentários.</p>";
     echo 'Finalizada a validação da consistencia e contagem dos dados no csv</p></br>';
 }
@@ -244,7 +366,8 @@ function validate_file_to_export()
         foreach ($reviews_file as $in_file) {
             if ($in_store == $in_file) {
                 $is_in = true;
-            };
+            }
+            ;
         }
 
         if (!$is_in) {
@@ -253,7 +376,7 @@ function validate_file_to_export()
     }
 
     var_dump($not_in);
-    genarate_csv_by_array($not_in, 'reviews_diff');
+    genarate_json_by_array($not_in, 'review_diff');
     echo "<p>Forão encontrados " . count($not_in) . " comentários faltantes no csv.</p>";
-    echo 'Finalizada a validação da consistencia e contagem dos dados no csv, se houverem divergencias, um csv reviews_diff com elas será gerado.</p></br>';
+    echo 'Finalizada a validação da consistencia e contagem dos dados no csv, se houverem divergencias, um json review_diff com elas será gerado.</p></br>';
 }

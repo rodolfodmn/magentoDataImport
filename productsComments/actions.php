@@ -24,17 +24,15 @@ switch ($_GET['opcao']) {
         while (($line = fgets($file)) !== false) {
             try {
                 if ($data = unserialize($line)) {
-                    // Mage::log($data,null,'log.log',true);
+					// Mage::log($data,null,'log.log',true);
                     if ($data['customer_id']) {
                         $customer = Mage::getModel('customer/customer')
                             ->setWebsiteId(Mage::app()->getStore()->getWebsiteId())
                             ->loadByEmail($data['customer_id']);
                         if ($customer && $customer->getId()) {
                             $data['customer_id'] = $customer->getId();
-                        } else {
+                        } else
                             $data['customer_id'] = null;
-                        }
-
                     }
                     unset($data['detail_id']);
                     unset($data['review_id']);
@@ -47,12 +45,12 @@ switch ($_GET['opcao']) {
                         ->setStoreId(Mage::app()->getStore()->getId())
                         ->setStores(array(Mage::app()->getStore()->getId()));
                     $review->save();
-                    // var_dump($review->getProductCollection());
+						// var_dump($review->getProductCollection());
                     Mage::getModel('rating/rating')
                         ->setRatingId(1)
                         ->setReviewId($review->getId());
-
-                    // ->addOptionVote($data['rate'], $prodId);
+						
+						// ->addOptionVote($data['rate'], $prodId);
 
                     $review->save();
                     $review->aggregate();

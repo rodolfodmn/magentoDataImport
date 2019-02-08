@@ -9,6 +9,8 @@
         'import_csv',
         'see_file_to_export',
         'validate_file_to_export',
+        'see_json_file_to_export',
+        'import_json_file',
     ];
 
     echo "<p>O que você precisa hoje?<p><br />";
